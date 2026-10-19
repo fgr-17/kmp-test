@@ -2,6 +2,8 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Web (Wasm), and D
 
 For a visual map of modules, dependencies, communication, and injection status, see **[docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)**.
 
+Architecture notes: **[docs/CLOUD_VS_LOCAL_BACKEND.md](docs/CLOUD_VS_LOCAL_BACKEND.md)** · **[docs/OFFLINE_NOTES_DEMO.md](docs/OFFLINE_NOTES_DEMO.md)** · **[docs/MULTIPLATFORM_UI.md](docs/MULTIPLATFORM_UI.md)** · **[docs/CONTRACTS_DOCKER_TESTING.md](docs/CONTRACTS_DOCKER_TESTING.md)**.
+
 * [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
   you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
 
@@ -27,6 +29,7 @@ options:
 - iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
 - Web app: `./gradlew :webApp:wasmJsBrowserDevelopmentRun` then open the URL Gradle prints (usually `http://localhost:8080`).
 - Desktop app: `./gradlew :desktopApp:run`
+- Go cloud (notes sync): `cd backend && go run .`
 
 ### Running tests
 

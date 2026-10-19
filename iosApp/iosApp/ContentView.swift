@@ -3,47 +3,127 @@ import SharedLogic
 import KMPNativeCoroutinesAsync
 
 struct ContentView: View {
-    // Subscribes the view to the view model
-    // that is declared below as ObservableObject
     @ObservedObject private(set) var viewModel: ViewModel
 
     var body: some View {
-        ListView(phrases: viewModel.greetings)
-            // Calls the startObserving() function
-            // with the .task modifier to support concurrency
-            .task { await self.viewModel.startObserving() }
+        List {
+            Section("Greetings") {
+                ForEach(viewModel.greetings, id: \.self) { phrase in
+                    Text(phrase)
+                }
+            }
+
+            Section {
+                Text(viewModel.status)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Toggle("Online", isOn: Binding(
+                    get: { viewModel.isOnline },
+                    set: { viewModel.setOnline($0) }
+                ))
+
+                HStack {
+                    TextField("Note (e.g. Checked barrel B12)", text: $viewModel.draft)
+                        .textFieldStyle(.roundedBorder)
+                    Button("Add") {
+                        viewModel.addNote()
+                    }
+                    .disabled(viewModel.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+
+                Button("Sync") {
+                    Task { await viewModel.sync() }
+                }
+            } header: {
+                Text("Field notes (offline → cloud)")
+            }
+
+            Section("Notes") {
+                ForEach(viewModel.notes, id: \.id) { note in
+                    Text("[\(note.syncStatus.name)] \(note.text)")
+                }
+            }
+        }
+        .task {
+            await viewModel.startObserving()
+        }
     }
 }
 
-// ViewModel is declared as an extension to ContentView,
-// as they are closely connected
 extension ContentView {
     @MainActor
     class ViewModel: ObservableObject {
-        // This property is intended to hold the greeting phrases
-        // emitted by the ViewModel's flow
         @Published var greetings: [String] = []
+        @Published var notes: [FieldNote] = []
+        @Published var isOnline: Bool = false
+        @Published var status: String = "Offline by default — add notes, then sync."
+        @Published var draft: String = ""
+
+        // Single-arg ctor (ObjC/Swift cannot see Kotlin default parameters)
+        private let notesFacade = NotesFacade(baseUrl: CloudConfig.shared.IOS_SIMULATOR_BASE_URL)
+
+        func setOnline(_ online: Bool) {
+            isOnline = online
+            notesFacade.isOnline = online
+            status = online
+                ? "Online — Sync will reach the Go backend."
+                : "Offline — notes stay on device."
+        }
+
+        func addNote() {
+            let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return }
+            notesFacade.addNote(text: text)
+            draft = ""
+            status = "Saved locally (\(isOnline ? "online but not synced yet" : "offline"))."
+        }
+
+        func sync() async {
+            do {
+                let result = try await asyncFunction(for: notesFacade.sync())
+                if result is SyncResultOffline {
+                    status = "Still offline — turn Online on first."
+                } else if result is SyncResultNothingToSync {
+                    status = "Nothing pending."
+                } else if let synced = result as? SyncResultSynced {
+                    status = "Synced \(synced.count) note(s) to cloud."
+                } else if let failed = result as? SyncResultFailed {
+                    status = "Sync failed: \(failed.message)"
+                } else {
+                    status = "Sync finished."
+                }
+            } catch {
+                status = "Sync failed: \(error.localizedDescription)"
+            }
+        }
 
         func startObserving() async {
+            async let greetingsTask: Void = observeGreetings()
+            async let notesTask: Void = observeNotes()
+            _ = await (greetingsTask, notesTask)
+        }
+
+        private func observeGreetings() async {
             do {
-                // Consumes the flow emitted by Greeting().greet() from Kotlin
                 let sequence = asyncSequence(for: Greeting().greet())
                 for try await phrase in sequence {
                     self.greetings.append(phrase)
                 }
             } catch {
-                print("Failed with error: \(error)")
+                print("Failed observing greetings: \(error)")
             }
         }
-    }
-}
 
-struct ListView: View {
-    let phrases: Array<String>
-
-    var body: some View {
-        List(phrases, id: \.self) {
-            Text($0)
+        private func observeNotes() async {
+            do {
+                let sequence = asyncSequence(for: notesFacade.notes)
+                for try await list in sequence {
+                    self.notes = list
+                }
+            } catch {
+                print("Failed observing notes: \(error)")
+            }
         }
     }
 }

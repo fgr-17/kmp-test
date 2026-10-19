@@ -15,7 +15,7 @@ Four client apps share one Kotlin logic library. UIs are **not** all shared:
 | **webApp** | Compose Multiplatform (Wasm) | Gradle project dependency on `sharedLogic` |
 | **desktopApp** | Compose Desktop (JVM) | Gradle project dependency on `sharedLogic` |
 
-![Architecture overview](images/greetingkmp-architecture-overview.jpg)
+![Architecture overview](images/greetingkmp-architecture-overview-v2.jpg)
 
 ```mermaid
 flowchart TB
@@ -26,17 +26,28 @@ flowchart TB
     desktopApp[desktopApp Compose Desktop]
   end
 
+  subgraph desktopOs [desktopApp packages]
+    win[Windows]
+    mac[macOS]
+    linux[Linux]
+  end
+
   sharedUI[sharedUI Compose]
   sharedLogic[sharedLogic KMP]
+  backend[Go backend notes]
 
   androidApp --> sharedUI
   sharedUI --> sharedLogic
   iosApp -->|"SharedLogic.framework"| sharedLogic
   webApp --> sharedLogic
   desktopApp --> sharedLogic
+  desktopApp --- win
+  desktopApp --- mac
+  desktopApp --- linux
 
   sharedLogic --> ktor[Ktor HTTP client]
   ktor --> api[SpaceDevs Launch API]
+  sharedLogic --> backend
 
   sharedLogic -.->|"deps declared, not wired yet"| koin[Koin]
   sharedLogic -.->|"plugin + deps, no .sq yet"| sql[SQLDelight]
@@ -53,10 +64,29 @@ GreetingKMP/
 ├── webApp/              # Kotlin/Wasm + Compose entry
 ├── desktopApp/          # Windows / macOS / Linux Compose Desktop entry
 ├── sharedUI/            # Android Compose UI + MainViewModel
-├── sharedLogic/         # Business logic shared by all platforms
+├── sharedLogic/         # Business logic + offline notes/sync
+├── backend/             # Go cloud API (system of record for notes demo)
 ├── gradle/libs.versions.toml
-└── docs/                # This documentation
+└── docs/                # Architecture + demo docs
 ```
+
+Related docs:
+
+- [CLOUD_VS_LOCAL_BACKEND.md](CLOUD_VS_LOCAL_BACKEND.md) — cloud vs device responsibilities  
+- [OFFLINE_NOTES_DEMO.md](OFFLINE_NOTES_DEMO.md) — how to run the offline → sync playground  
+- [MULTIPLATFORM_UI.md](MULTIPLATFORM_UI.md) — designing UIs across Android / iOS / web / desktop  
+- [CONTRACTS_DOCKER_TESTING.md](CONTRACTS_DOCKER_TESTING.md) — shared contracts with Go, Docker, testing pyramid
+
+### Terminology: targets vs apps
+
+In KMP conversations both words appear; they are not the same:
+
+| Term | Meaning | Examples here |
+|------|---------|----------------|
+| **Target** | A Kotlin *compile* destination in Gradle (`android`, `iosArm64`, `wasmJs`, `jvm`) | Rows in the table below |
+| **App / client / platform** | A product surface users run | `androidApp`, `iosApp`, `webApp`, `desktopApp` |
+
+Say **targets** when talking about shared source sets and engines. Say **apps** (or platforms) when talking about iOS/Android/web/desktop UIs.
 
 ### Targets inside `sharedLogic`
 
@@ -105,6 +135,7 @@ Pinned in [`gradle/libs.versions.toml`](../gradle/libs.versions.toml):
 | iOS | Open `iosApp` in Xcode |
 | Web | `./gradlew :webApp:wasmJsBrowserDevelopmentRun` → browser (~`http://localhost:8080`) |
 | Desktop | `./gradlew :desktopApp:run` (packages: `:desktopApp:packageDistributionForCurrentOS`) |
+| Go cloud | `cd backend && go run .` → `http://localhost:8081` |
 
 ---
 
@@ -321,7 +352,8 @@ Treat Koin and SQLDelight as **prepared dependencies**, not active architecture.
 | Android / iOS / Web / Desktop clients | Working |
 | Independent UIs (iOS + Web + Desktop) | Working |
 | Koin DI | Declared only |
-| SQLDelight persistence | Declared only |
+| SQLDelight persistence | Declared only (notes demo uses in-memory local store) |
+| Offline notes → Go sync | Working playground (Android, iOS, web, desktop) |
 | Web CORS for launch API | Likely fails in browser |
 
 ---
