@@ -25,16 +25,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.jetbrains.greetingkmp.notes.CloudConfig
 import com.jetbrains.greetingkmp.notes.NotesFacade
+import com.jetbrains.greetingkmp.notes.NotesUiTags
 import com.jetbrains.greetingkmp.notes.SyncResult
 import kotlinx.coroutines.launch
 
 @Composable
-fun WebApp() {
+fun WebApp(notesFacade: NotesFacade = NotesFacade(CloudConfig.WEB_BASE_URL)) {
     val greetings = remember { mutableStateListOf<String>() }
-    val notesFacade = remember { NotesFacade(CloudConfig.WEB_BASE_URL) }
     val notes by notesFacade.notes.collectAsState()
     var draft by remember { mutableStateOf("") }
     var online by remember { mutableStateOf(notesFacade.isOnline) }
@@ -49,10 +50,11 @@ fun WebApp() {
 
     MaterialTheme {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text("Greetings", style = MaterialTheme.typography.titleMedium)
@@ -62,7 +64,11 @@ fun WebApp() {
             }
 
             Text("Field notes (offline → cloud)", style = MaterialTheme.typography.titleMedium)
-            Text(status, style = MaterialTheme.typography.bodySmall)
+            Text(
+                status,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.testTag(NotesUiTags.STATUS),
+            )
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -74,19 +80,24 @@ fun WebApp() {
                     onCheckedChange = {
                         online = it
                         notesFacade.isOnline = it
-                        status = if (it) {
-                            "Online — Sync will reach the Go backend."
-                        } else {
-                            "Offline — notes stay on device."
-                        }
+                        status =
+                            if (it) {
+                                "Online — Sync will reach the Go backend."
+                            } else {
+                                "Offline — notes stay on device."
+                            }
                     },
+                    modifier = Modifier.testTag(NotesUiTags.ONLINE_SWITCH),
                 )
             }
 
             OutlinedTextField(
                 value = draft,
                 onValueChange = { draft = it },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag(NotesUiTags.NOTE_INPUT),
                 label = { Text("Note (e.g. Checked barrel B12)") },
                 singleLine = true,
             )
@@ -99,28 +110,33 @@ fun WebApp() {
                         draft = ""
                         status = "Saved locally (${if (online) "online but not synced yet" else "offline"})."
                     },
+                    modifier = Modifier.testTag(NotesUiTags.ADD_NOTE),
                 ) {
                     Text("Add note")
                 }
                 Button(
                     onClick = {
                         scope.launch {
-                            status = when (val result = notesFacade.sync()) {
-                                SyncResult.Offline -> "Still offline — turn Online on first."
-                                SyncResult.NothingToSync -> "Nothing pending."
-                                is SyncResult.Synced -> "Synced ${result.count} note(s) to cloud."
-                                is SyncResult.Failed -> "Sync failed: ${result.message}"
-                            }
+                            status =
+                                when (val result = notesFacade.sync()) {
+                                    SyncResult.Offline -> "Still offline — turn Online on first."
+                                    SyncResult.NothingToSync -> "Nothing pending."
+                                    is SyncResult.Synced -> "Synced ${result.count} note(s) to cloud."
+                                    is SyncResult.Failed -> "Sync failed: ${result.message}"
+                                }
                         }
                     },
+                    modifier = Modifier.testTag(NotesUiTags.SYNC),
                 ) {
                     Text("Sync")
                 }
             }
 
-            notes.forEach { note ->
-                Text("[${note.syncStatus}] ${note.text}")
-                HorizontalDivider()
+            Column(modifier = Modifier.testTag(NotesUiTags.NOTES_LIST)) {
+                notes.forEach { note ->
+                    Text("[${note.syncStatus}] ${note.text}")
+                    HorizontalDivider()
+                }
             }
         }
     }

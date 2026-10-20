@@ -17,24 +17,29 @@ struct ContentView: View {
                 Text(viewModel.status)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(NotesUiTags.shared.STATUS)
 
                 Toggle("Online", isOn: Binding(
                     get: { viewModel.isOnline },
                     set: { viewModel.setOnline($0) }
                 ))
+                .accessibilityIdentifier(NotesUiTags.shared.ONLINE_SWITCH)
 
                 HStack {
                     TextField("Note (e.g. Checked barrel B12)", text: $viewModel.draft)
                         .textFieldStyle(.roundedBorder)
+                        .accessibilityIdentifier(NotesUiTags.shared.NOTE_INPUT)
                     Button("Add") {
                         viewModel.addNote()
                     }
+                    .accessibilityIdentifier(NotesUiTags.shared.ADD_NOTE)
                     .disabled(viewModel.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
 
                 Button("Sync") {
                     Task { await viewModel.sync() }
                 }
+                .accessibilityIdentifier(NotesUiTags.shared.SYNC)
             } header: {
                 Text("Field notes (offline → cloud)")
             }
@@ -44,6 +49,7 @@ struct ContentView: View {
                     Text("[\(note.syncStatus.name)] \(note.text)")
                 }
             }
+            .accessibilityIdentifier(NotesUiTags.shared.NOTES_LIST)
         }
         .task {
             await viewModel.startObserving()

@@ -29,7 +29,11 @@ Or Android (emulator → host machine):
 ./gradlew :androidApp:installDebug
 ```
 
-Android uses `http://10.0.2.2:8081` so the emulator reaches the host Go server.
+Android uses `http://127.0.0.1:8081`. Forward it once per emulator boot:
+
+```bash
+adb reverse tcp:8081 tcp:8081
+```
 
 ## Pieces
 
@@ -44,7 +48,7 @@ Android uses `http://10.0.2.2:8081` so the emulator reaches the host Go server.
 
 Local persistence in this demo is **in-memory** (resets on process kill). Production would swap `LocalNoteStore` for SQLDelight.
 
-**URLs:** desktop / web / iOS Simulator → `http://localhost:8081`. Android emulator → `http://10.0.2.2:8081`.
+**URLs:** desktop / web / iOS Simulator → `http://localhost:8081`. Android emulator → `http://127.0.0.1:8081` after `adb reverse tcp:8081 tcp:8081`.
 
 ## Architecture reminder
 

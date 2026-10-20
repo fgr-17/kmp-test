@@ -1,0 +1,15 @@
+root = true
+
+[*.{kt,kts}]
+indent_size = 4
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+# Compose / KMP conventions
+ktlint_standard_filename = disabled
+ktlint_standard_function-naming = disabled
+ktlint_standard_class-naming = disabled
+# Strict wrapping rules fight typical Compose Modifier chains; keep indent via IDE/ktlintFormat
+ktlint_standard_multiline-expression-wrapping = disabled
+ktlint_standard_string-template-indent = disabled
+ktlint_standard_argument-list-wrapping = disabled

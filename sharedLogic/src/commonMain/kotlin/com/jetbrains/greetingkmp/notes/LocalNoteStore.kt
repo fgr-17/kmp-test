@@ -16,19 +16,26 @@ class LocalNoteStore {
     val notes: StateFlow<List<FieldNote>> = _notes.asStateFlow()
 
     @OptIn(ExperimentalUuidApi::class)
-    fun add(text: String, createdAtIso: String): FieldNote {
-        val note = FieldNote(
-            id = Uuid.random().toString(),
-            text = text.trim(),
-            createdAt = createdAtIso,
-            syncStatus = SyncStatus.PENDING,
-        )
+    fun add(
+        text: String,
+        createdAtIso: String,
+    ): FieldNote {
+        val note =
+            FieldNote(
+                id = Uuid.random().toString(),
+                text = text.trim(),
+                createdAt = createdAtIso,
+                syncStatus = SyncStatus.PENDING,
+            )
         _notes.update { it + note }
         return note
     }
 
-    fun pending(): List<FieldNote> =
-        _notes.value.filter { it.syncStatus == SyncStatus.PENDING }
+    fun pending(): List<FieldNote> = _notes.value.filter { it.syncStatus == SyncStatus.PENDING }
+
+    fun clear() {
+        _notes.value = emptyList()
+    }
 
     fun markSynced(ids: Collection<String>) {
         if (ids.isEmpty()) return

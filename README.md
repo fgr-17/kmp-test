@@ -2,6 +2,8 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Web (Wasm), and D
 
 For a visual map of modules, dependencies, communication, and injection status, see **[docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)**.
 
+Spanish walkthrough with block and sequence diagrams: **[docs/infodeck.html](docs/infodeck.html)**.
+
 Architecture notes: **[docs/CLOUD_VS_LOCAL_BACKEND.md](docs/CLOUD_VS_LOCAL_BACKEND.md)** · **[docs/OFFLINE_NOTES_DEMO.md](docs/OFFLINE_NOTES_DEMO.md)** · **[docs/MULTIPLATFORM_UI.md](docs/MULTIPLATFORM_UI.md)** · **[docs/CONTRACTS_DOCKER_TESTING.md](docs/CONTRACTS_DOCKER_TESTING.md)**.
 
 * [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
@@ -37,6 +39,8 @@ Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
 
 - Android tests: `./gradlew :sharedUI:testAndroidHostTest :sharedLogic:testAndroidHostTest`
 - iOS tests: `./gradlew :sharedLogic:iosSimulatorArm64Test`
+- Quality gate (Detekt, ktlint, CPD, unit + JaCoCo): `./gradlew qualityCheck`
+- E2E (shared Gherkin, one driver per app): see **[docs/QUALITY_AND_TESTING.md](docs/QUALITY_AND_TESTING.md)**
 
 ---
 

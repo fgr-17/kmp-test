@@ -55,34 +55,27 @@ func (s *store) list() []Note {
 	return out
 }
 
-func withCORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+func (s *store) clear() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.notes = make(map[string]Note)
 }
 
-func main() {
-	s := newStore()
+func newMux(s *store) *http.ServeMux {
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{
 			"status": "ok",
 			"time":   time.Now().UTC().Format(time.RFC3339),
 		})
 	})
-
 	mux.HandleFunc("GET /notes", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, s.list())
 	})
-
+	mux.HandleFunc("DELETE /notes", func(w http.ResponseWriter, _ *http.Request) {
+		s.clear()
+		w.WriteHeader(http.StatusNoContent)
+	})
 	mux.HandleFunc("POST /notes/batch", func(w http.ResponseWriter, r *http.Request) {
 		var body batchRequest
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -93,10 +86,26 @@ func main() {
 		log.Printf("synced %d note(s)", len(accepted))
 		writeJSON(w, http.StatusOK, batchResponse{AcceptedIDs: accepted})
 	})
+	return mux
+}
 
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func main() {
 	addr := ":8081"
 	log.Printf("GreetingKMP cloud backend listening on http://localhost%s", addr)
-	log.Fatal(http.ListenAndServe(addr, withCORS(mux)))
+	log.Fatal(http.ListenAndServe(addr, withCORS(newMux(newStore()))))
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {

@@ -30,7 +30,14 @@ class NoteSyncService(
 
 sealed interface SyncResult {
     data object Offline : SyncResult
+
     data object NothingToSync : SyncResult
-    data class Synced(val count: Int) : SyncResult
-    data class Failed(val message: String) : SyncResult
+
+    data class Synced(
+        val count: Int,
+    ) : SyncResult
+
+    data class Failed(
+        val message: String,
+    ) : SyncResult
 }

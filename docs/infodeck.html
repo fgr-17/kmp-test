@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GreetingKMP</title>
+  <style>
+    :root {
+      --ink: #1b2838;
+      --muted: #5c6b7a;
+      --line: #d5dde6;
+      --paper: #f7f8fa;
+      --card: #fff;
+      --android: #1f8f4e;
+      --android-bg: #eefaf3;
+      --ios: #3a7bd5;
+      --ios-bg: #f3f7fd;
+      --web: #0e8f86;
+      --web-bg: #eef8f7;
+      --desk: #e07a12;
+      --desk-bg: #fff6ec;
+      --logic: #243044;
+      --cloud: #4d6d8c;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); }
+    body {
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.4;
+    }
+    .slide {
+      display: none;
+      min-height: 100%;
+      padding: 2.2rem 5vw 4.6rem;
+      overflow: auto;
+    }
+    .slide.active { display: block; }
+    h1, h2 {
+      font-family: Palatino, "Iowan Old Style", Georgia, serif;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+    }
+    h1 { font-size: clamp(2.2rem, 4.5vw, 3.6rem); line-height: 1.05; }
+    h2 { font-size: clamp(1.6rem, 3vw, 2.3rem); }
+    .lead { color: var(--muted); margin: 0 0 1.1rem; max-width: 44rem; }
+    .kicker {
+      color: var(--cloud);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin: 0 0 0.45rem;
+    }
+    .bar {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0.65rem 5vw 0.8rem;
+      background: linear-gradient(transparent, var(--paper) 28%);
+      color: var(--muted); font-size: 0.85rem;
+    }
+    button {
+      border: 1px solid var(--line); background: var(--card); color: var(--ink);
+      border-radius: 999px; padding: 0.32rem 0.75rem; font: inherit; cursor: pointer;
+    }
+    #count { margin-left: auto; }
+
+    .apps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.7rem;
+      max-width: 68rem;
+    }
+    .app {
+      background: var(--card);
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      padding: 0.75rem 0.8rem 0.85rem;
+      min-height: 5.2rem;
+    }
+    .app b { display: block; font-size: 1.05rem; }
+    .app span { color: var(--muted); font-size: 0.88rem; }
+    .app.android { border-color: var(--android); background: var(--android-bg); }
+    .app.ios { border-color: var(--ios); background: var(--ios-bg); }
+    .app.web { border-color: var(--web); background: var(--web-bg); }
+    .app.desk { border-color: var(--desk); background: var(--desk-bg); }
+    .down {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      max-width: 68rem;
+      height: 1.6rem;
+    }
+    .down i {
+      justify-self: center;
+      width: 2px; height: 100%;
+      background: #8aa0b5;
+      position: relative;
+    }
+    .down i::after {
+      content: "";
+      position: absolute; left: 50%; bottom: 0;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #8aa0b5;
+    }
+    .logic {
+      max-width: 68rem;
+      background: var(--logic);
+      color: white;
+      border-radius: 16px;
+      padding: 0.9rem 1rem 1rem;
+    }
+    .logic h3 { margin: 0 0 0.55rem; font-size: 1.15rem; }
+    .logic p { margin: 0.15rem 0 0.7rem; color: #c9d4e0; font-size: 0.92rem; }
+    .inner {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .inner div {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      padding: 0.55rem 0.65rem;
+      font-size: 0.92rem;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: 1.15fr 0.3fr 1fr;
+      gap: 0.6rem;
+      align-items: center;
+      max-width: 72rem;
+    }
+    .device, .cloud {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 0.9rem;
+    }
+    .device { border: 2px solid var(--logic); }
+    .cloud {
+      border: 2px dashed var(--cloud);
+      background: #f4f8fb;
+      border-radius: 48px;
+    }
+    .device h3, .cloud h3 { margin: 0 0 0.6rem; font-size: 1.05rem; }
+    .stack { display: grid; gap: 0.45rem; }
+    .box {
+      background: var(--card);
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      padding: 0.5rem 0.65rem;
+    }
+    .box b { display: block; }
+    .box span { color: var(--muted); font-size: 0.86rem; }
+    .sync-arrow {
+      text-align: center;
+      color: var(--cloud);
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    .sync-arrow em { display: block; font-style: normal; font-size: 1.4rem; }
+
+    .seq { max-width: 72rem; --n: 4; }
+    .actors, .lifelines {
+      display: grid;
+      grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .actors span {
+      display: block;
+      text-align: center;
+      background: var(--card);
+      border: 2px solid var(--logic);
+      border-radius: 12px;
+      padding: 0.55rem 0.35rem;
+      font-weight: 650;
+      z-index: 1;
+    }
+    .timeline { position: relative; margin-top: 0.15rem; }
+    .lifelines {
+      position: absolute;
+      inset: 0 0 0 0;
+      gap: 0;
+      pointer-events: none;
+    }
+    .lifelines i {
+      justify-self: center;
+      border-left: 2px dashed #b7c6d4;
+    }
+    .msg {
+      position: relative;
+      min-height: 3.5rem;
+      z-index: 1;
+    }
+    .msg span {
+      display: block;
+      margin-left: calc((var(--from) - 0.5) / var(--n) * 100%);
+      width: calc((var(--to) - var(--from)) / var(--n) * 100%);
+      text-align: center;
+      font-size: 0.92rem;
+      line-height: 1.25;
+      padding: 0.35rem 0.4rem 0.15rem;
+    }
+    .msg::before {
+      content: "";
+      position: absolute;
+      left: calc((var(--from) - 0.5) / var(--n) * 100%);
+      width: calc((var(--to) - var(--from)) / var(--n) * 100%);
+      bottom: 0.35rem;
+      border-top: 2.5px solid var(--logic);
+    }
+    .msg::after {
+      content: "";
+      position: absolute;
+      bottom: calc(0.35rem - 6px);
+      border: 6px solid transparent;
+    }
+    .msg.right::after {
+      left: calc((var(--to) - 0.5) / var(--n) * 100% - 10px);
+      border-left-color: var(--logic);
+    }
+    .msg.left::after {
+      left: calc((var(--from) - 0.5) / var(--n) * 100% - 2px);
+      border-right-color: var(--logic);
+    }
+    .msg.stop::before {
+      border-top-style: dashed;
+      width: calc((var(--to) - var(--from)) / var(--n) * 100% - 14px);
+    }
+    .msg.stop::after {
+      content: "×";
+      border: 0;
+      left: calc((var(--to) - 0.5) / var(--n) * 100% - 0.4rem);
+      bottom: 0;
+      color: #9a3b2f;
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .story {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.5rem;
+      max-width: 72rem;
+      margin-bottom: 0.9rem;
+    }
+    .story span {
+      background: var(--card);
+      border: 2px solid var(--logic);
+      border-radius: 12px;
+      padding: 0.55rem 0.4rem;
+      text-align: center;
+      font-size: 0.92rem;
+    }
+    .arch {
+      display: block;
+      width: min(100%, 76rem);
+      max-height: calc(100vh - 10.5rem);
+      object-fit: contain;
+      object-position: left center;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .gherkins {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      max-width: 76rem;
+    }
+    .gherkin {
+      background: var(--card);
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .gherkin header {
+      padding: 0.55rem 0.85rem;
+      background: var(--accent-soft, #e5f3ee);
+      font-weight: 700;
+    }
+    .gherkin pre {
+      margin: 0;
+      padding: 0.75rem 0.9rem 0.9rem;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .gherkin .kw { color: var(--cloud); font-weight: 700; }
+    .backdrop {
+      max-width: 76rem;
+      margin-bottom: 0.75rem;
+      background: var(--card);
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 0.7rem 0.9rem;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .kw { color: var(--cloud); font-weight: 700; }
+    .note {
+      margin: 0.7rem 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .quiet { opacity: 0.45; }
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+      max-width: 68rem;
+    }
+    .checks article {
+      background: var(--card);
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 0.8rem 0.9rem;
+    }
+    .checks b { display: block; margin-bottom: 0.2rem; }
+    .checks span { color: var(--muted); font-size: 0.9rem; }
+    .lanes {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      max-width: 72rem;
+    }
+    .lane {
+      background: var(--card);
+      border-radius: 14px;
+      border: 2px solid var(--line);
+      overflow: hidden;
+    }
+    .lane header { padding: 0.55rem 0.7rem; font-weight: 700; }
+    .lane ol { margin: 0; padding: 0.7rem 0.7rem 0.8rem 1.5rem; }
+    .lane li { margin: 0.28rem 0; font-size: 0.92rem; }
+    .lane.android { border-color: var(--android); }
+    .lane.android header { background: var(--android-bg); }
+    .lane.ios { border-color: var(--ios); }
+    .lane.ios header { background: var(--ios-bg); }
+    .lane.web { border-color: var(--web); }
+    .lane.web header { background: var(--web-bg); }
+    .lane.desk { border-color: var(--desk); }
+    .lane.desk header { background: var(--desk-bg); }
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      max-width: 68rem;
+    }
+    .panel {
+      background: var(--card);
+      border: 1.5px solid var(--line);
+      border-radius: 16px;
+      padding: 0.9rem 1rem;
+    }
+    .panel h3 { margin: 0 0 0.4rem; }
+    .machines {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+      max-width: 68rem;
+    }
+    .machines article {
+      background: var(--card);
+      border-radius: 16px;
+      border: 2px solid var(--line);
+      padding: 0.85rem 0.95rem;
+      min-height: 11rem;
+    }
+    .pipeline {
+      display: grid;
+      gap: 0.4rem;
+      max-width: 58rem;
+    }
+    .stage {
+      display: grid;
+      grid-template-columns: 2.2rem 1fr;
+      gap: 0.65rem;
+      align-items: start;
+      background: #f3f8ff;
+      border: 2px solid #8eb4e8;
+      border-radius: 14px;
+      padding: 0.55rem 0.75rem 0.65rem;
+    }
+    .stage .n {
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 50%;
+      background: #d6e6fb;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      margin-top: 0.1rem;
+    }
+    .stage b { display: block; }
+    .stage p { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.92rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
+    .chip {
+      font-size: 0.78rem;
+      background: #e7f6ee;
+      border-radius: 999px;
+      padding: 0.12rem 0.5rem;
+    }
+    .chip.blue { background: #e4eefc; }
+    .flowshot {
+      display: block;
+      width: auto;
+      max-width: 100%;
+      max-height: calc(100vh - 9.5rem);
+      margin: 0 auto;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .machines h3 { margin: 0 0 0.4rem; }
+    .machines li { margin: 0.25rem 0; }
+    @media (max-width: 900px) {
+      .apps, .down, .inner, .split, .checks, .lanes, .two, .machines, .story, .gherkins {
+        grid-template-columns: 1fr;
+      }
+      .down { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main id="deck">
+
+    <section class="slide active">
+      <p class="kicker">GreetingKMP</p>
+      <h1>Del campo a la nube, en cuatro pantallas.</h1>
+      <p class="lead">La misma nota se puede cargar en un teléfono Android, un iPhone, el navegador o la computadora. Si no hay internet, queda en el aparato. Cuando vuelve la red, viaja a la nube.</p>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Las cuatro pantallas</p>
+      <h2>Cada aparato tiene su cara. La lógica es una sola.</h2>
+      <p class="lead">Lo que la persona ve cambia. Lo que decide guardar, marcar pendiente y enviar es el mismo bloque del medio.</p>
+      <div class="apps">
+        <div class="app android"><b>Teléfono Android</b><span>La pantalla del celular</span></div>
+        <div class="app ios"><b>iPhone</b><span>La pantalla del iPhone</span></div>
+        <div class="app web"><b>Navegador</b><span>La pantalla en la web</span></div>
+        <div class="app desk"><b>Computadora</b><span>Windows, Mac o Linux</span></div>
+      </div>
+      <div class="down" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="logic">
+        <h3>Lógica compartida</h3>
+        <p>Una sola pieza atiende a las cuatro pantallas.</p>
+        <div class="inner">
+          <div>Guardar la nota en el aparato</div>
+          <div>Saber si está pendiente o ya se envió</div>
+          <div>Mandarla a la nube cuando hay red</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Dónde vive cada cosa</p>
+      <h2>El aparato trabaja solo. La nube guarda el registro.</h2>
+      <div class="split">
+        <div class="device">
+          <h3>En el aparato</h3>
+          <div class="stack">
+            <div class="box"><b>Pantalla</b><span>Android, iPhone, navegador o computadora</span></div>
+            <div class="box"><b>Notas de este aparato</b><span>Lo que la persona acaba de cargar</span></div>
+            <div class="box"><b>Bandeja de salida</b><span>Lo que todavía no llegó a la nube</span></div>
+            <div class="box"><b>Envío</b><span>Sale recién cuando hay conexión</span></div>
+          </div>
+        </div>
+        <div class="sync-arrow"><em>→</em>sincronizar<em>←</em></div>
+        <div class="cloud">
+          <h3>En la nube</h3>
+          <div class="stack">
+            <div class="box"><b>Puerta de entrada</b><span>Recibe y devuelve notas</span></div>
+            <div class="box"><b>Registro común</b><span>Lo que ya confirmaron los aparatos</span></div>
+            <div class="box"><b>Acuerdo</b><span>App y nube hablan el mismo idioma</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Mapa completo</p>
+      <h2>Aparatos, lógica compartida y nube.</h2>
+      <img class="arch" src="images/greetingkmp-cloud-local-architecture-v2.jpg" alt="Cuatro apps conectadas a la lógica compartida, y esa lógica sincronizando con la nube.">
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Sin internet</p>
+      <h2>La nota queda en el aparato y no entra a la nube.</h2>
+      <div class="seq">
+        <div class="actors">
+          <span>Persona</span>
+          <span>Pantalla</span>
+          <span>Aparato</span>
+          <span>Nube</span>
+        </div>
+        <div class="timeline">
+          <div class="lifelines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="msg right" style="--from:1; --to:2"><span>Carga «revisé el barril»</span></div>
+          <div class="msg right" style="--from:2; --to:3"><span>La guarda como pendiente</span></div>
+          <div class="msg stop" style="--from:3; --to:4"><span>No llega</span></div>
+        </div>
+      </div>
+      <p class="note">La persona ve la nota en su lista, marcada pendiente. Quien mire la nube, no la encuentra.</p>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Con internet</p>
+      <h2>Al sincronizar, la nota queda en los dos lados.</h2>
+      <div class="seq">
+        <div class="actors">
+          <span>Persona</span>
+          <span>Pantalla</span>
+          <span>Aparato</span>
+          <span>Nube</span>
+        </div>
+        <div class="timeline">
+          <div class="lifelines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="msg right" style="--from:1; --to:2"><span>Marca que hay red y pide sincronizar</span></div>
+          <div class="msg right" style="--from:2; --to:4"><span>Manda las notas pendientes</span></div>
+          <div class="msg left" style="--from:2; --to:4"><span>La nube confirma que las recibió</span></div>
+          <div class="msg left" style="--from:1; --to:2"><span>La pantalla las muestra como enviadas</span></div>
+        </div>
+      </div>
+      <p class="note">A partir de ahí, la nota está en el aparato y también en el registro de la nube.</p>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">El acuerdo</p>
+      <h2>La app y la nube leen el mismo papel.</h2>
+      <div class="split">
+        <div class="device">
+          <h3>Las cuatro apps</h3>
+          <div class="stack">
+            <div class="box"><b>Arman el pedido</b><span>Qué notas van, con qué texto y en qué estado</span></div>
+            <div class="box"><b>Leen la respuesta</b><span>Cuántas se aceptaron</span></div>
+          </div>
+        </div>
+        <div class="sync-arrow"><em>↔</em>el mismo acuerdo</div>
+        <div class="cloud">
+          <h3>La nube</h3>
+          <div class="stack">
+            <div class="box"><b>Recibe ese pedido</b><span>Y guarda las notas</span></div>
+            <div class="box"><b>Contesta con la misma forma</b><span>Así la app sabe qué pasó</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="note">Hay un ejemplo fijo de pedido y de respuesta. Los dos lados se prueban contra ese ejemplo. Si el acuerdo cambia, cambia para los dos.</p>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Antes de mirar las pantallas</p>
+      <h2>Una revisión automática del trabajo.</h2>
+      <p class="lead">Corre sola y deja un informe en un archivo. No hace falta abrir ninguna app.</p>
+      <div class="checks">
+        <article><b>¿Está escrito parejo?</b><span>Misma forma en todo el proyecto.</span></article>
+        <article><b>¿Hay fallas conocidas?</b><span>Busca problemas típicos en la lógica.</span></article>
+        <article><b>¿Hay texto repetido?</b><span>Marca copias que conviene unir.</span></article>
+        <article><b>¿La lógica responde bien?</b><span>Preguntas chicas, con un resultado esperado.</span></article>
+        <article><b>¿Cuánto quedó cubierto?</b><span>Qué parte de la lógica pasó por esas preguntas.</span></article>
+        <article><b>¿La nube cumple el acuerdo?</b><span>El pedido de ejemplo tiene que salir bien.</span></article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">El relato, escrito</p>
+      <h2>Las dos escenas que recorren las cuatro pantallas.</h2>
+      <div class="backdrop"><span class="kw">Feature:</span> Offline field notes sync
+  <span class="kw">As a</span> cellar operator
+  <span class="kw">I</span> capture notes while offline and sync them when connectivity returns.
+  Every client app (web, android, ios, desktop) runs this same feature
+  through its own Behave driver.
+
+  <span class="kw">Background:</span>
+    <span class="kw">Given</span> the cloud backend is reachable</div>
+      <div class="gherkins">
+        <article class="gherkin">
+          <header>Sin conexión, la nota queda pendiente</header>
+          <pre><span class="kw">Scenario:</span> Add note while offline stays pending on device
+  <span class="kw">Given</span> the app is offline
+  <span class="kw">When</span> I add a note "Checked barrel B12"
+  <span class="kw">Then</span> I should see a pending note "Checked barrel B12"
+  <span class="kw">And</span> the cloud should not contain "Checked barrel B12"</pre>
+        </article>
+        <article class="gherkin">
+          <header>Con conexión, la nota llega a la nube</header>
+          <pre><span class="kw">Scenario:</span> Sync pushes pending notes to the cloud
+  <span class="kw">Given</span> the app is offline
+  <span class="kw">And</span> I add a note "Checked barrel B12"
+  <span class="kw">When</span> I go online
+  <span class="kw">And</span> I sync notes
+  <span class="kw">Then</span> I should see a synced note "Checked barrel B12"
+  <span class="kw">And</span> the cloud should contain "Checked barrel B12"</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">La misma historia</p>
+      <h2>Un relato, contado en las cuatro pantallas.</h2>
+      <div class="story">
+        <span>1. Sin red</span>
+        <span>2. Cargar la nota</span>
+        <span>3. Sigue pendiente</span>
+        <span>4. Hay red y se envía</span>
+        <span>5. Está en la nube</span>
+      </div>
+      <div class="lanes">
+        <article class="lane android"><header>Teléfono Android</header><ol><li>Abre la app</li><li>Hace los cinco pasos</li><li>Mira la nube</li></ol></article>
+        <article class="lane ios"><header>iPhone</header><ol><li>Abre la app</li><li>Hace los cinco pasos</li><li>Mira la nube</li></ol></article>
+        <article class="lane web"><header>Navegador</header><ol><li>Abre la app</li><li>Hace los cinco pasos</li><li>Mira la nube</li></ol></article>
+        <article class="lane desk"><header>Computadora</header><ol><li>Abre la app</li><li>Hace los cinco pasos</li><li>Mira la nube</li></ol></article>
+      </div>
+      <p class="note">El relato no se copia cuatro veces. Es uno solo. Cambia quién maneja cada pantalla.</p>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Quién recorre la pantalla</p>
+      <h2>Cada aparato se prueba de la forma que le corresponde.</h2>
+      <div class="lanes">
+        <article class="lane web">
+          <header>Navegador</header>
+          <ol><li>Se abre como lo haría una persona</li><li>Escribe, marca y sincroniza</li></ol>
+        </article>
+        <article class="lane android">
+          <header>Teléfono Android</header>
+          <ol><li>Busca cada botón por su nombre</li><li>Lo toca en el centro de ese botón</li></ol>
+        </article>
+        <article class="lane ios">
+          <header>iPhone</header>
+          <ol><li>Usa el simulador</li><li>Busca el interruptor y los botones</li></ol>
+        </article>
+        <article class="lane desk">
+          <header>Computadora</header>
+          <ol><li>Le pide cada paso a la app</li><li>La ventana no muestra el mouse</li></ol>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">De principio a fin</p>
+      <h2>Qué pasa cuando se pide una prueba.</h2>
+      <div class="seq">
+        <div class="actors">
+          <span>Quien la pide</span>
+          <span>Preparación</span>
+          <span>La historia</span>
+          <span>Cierre</span>
+        </div>
+        <div class="timeline">
+          <div class="lifelines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="msg right" style="--from:1; --to:2"><span>Elige la pantalla: web, Android, iPhone o computadora</span></div>
+          <div class="msg right" style="--from:2; --to:3"><span>Si la nube está apagada, la enciende y abre lo que haga falta</span></div>
+          <div class="msg right" style="--from:3; --to:4"><span>Vacía notas viejas, recorre los pasos y anota el resultado</span></div>
+          <div class="msg left" style="--from:1; --to:4"><span>Deja los informes. En Android, apaga el teléfono virtual</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Mirar o no mirar</p>
+      <h2>La misma prueba, con la pantalla oculta o a la vista.</h2>
+      <div class="two">
+        <article class="panel">
+          <h3>Sin mostrar la pantalla</h3>
+          <p>Es el modo de todos los días y el de una máquina de integración. El navegador no se abre, el teléfono virtual no tiene ventana y el iPhone no muestra el simulador.</p>
+        </article>
+        <article class="panel">
+          <h3>Mostrando la pantalla</h3>
+          <p>Sirve cuando una persona quiere ver qué está pasando. Se abre el navegador, la ventana de la computadora, el teléfono Android o la ventana del iPhone.</p>
+        </article>
+      </div>
+      <p class="note">En la computadora, aunque la ventana esté visible, los pasos no se dibujan con el mouse: la prueba se los pide directo a la app.</p>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Las máquinas</p>
+      <h2>Cada tipo de equipo hace su parte.</h2>
+      <div class="machines">
+        <article>
+          <h3>Linux</h3>
+          <ul>
+            <li>La revisión automática</li>
+            <li>La prueba de la nube</li>
+            <li>Navegador y computadora</li>
+            <li>Android, si tiene un teléfono virtual</li>
+          </ul>
+        </article>
+        <article>
+          <h3>Mac</h3>
+          <ul>
+            <li>Todo lo de Linux</li>
+            <li>Y el iPhone, porque el simulador vive en Mac</li>
+          </ul>
+        </article>
+        <article>
+          <h3>Windows</h3>
+          <ul>
+            <li>Navegador</li>
+            <li>La app de computadora</li>
+          </ul>
+        </article>
+      </div>
+      <p class="note">Elegir qué corre en cada máquina es el trabajo del futuro tablero de integración. Los pasos ya están definidos.</p>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Lo que queda escrito</p>
+      <h2>Al terminar, hay papeles para leer.</h2>
+      <div class="checks">
+        <article><b>El relato</b><span>Qué pasó en cada pantalla, en una página.</span></article>
+        <article><b>La lista</b><span>Qué pasos salieron bien y cuáles no.</span></article>
+        <article><b>La tabla</b><span>Una fila por app: pruebas, fallos y cobertura.</span></article>
+      </div>
+      <p class="note">Esos papeles los puede leer una persona o, más adelante, el tablero que junta los resultados de Linux, Mac y Windows.</p>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Cómo se llega a las apps</p>
+      <h2>Primero se muestra. Después se construye.</h2>
+      <p class="lead">Armar las apps de entrada es lento para probar, publicar y mostrar. El camino va de lo que se puede mirar hoy a las apps del final.</p>
+      <div class="pipeline">
+        <article class="stage">
+          <span class="n">1</span>
+          <div>
+            <b>Producto define el pedido</b>
+            <p>Sale el documento, el diseño en Figma y el relato Gherkin.</p>
+            <div class="chips"><span class="chip blue">documento</span><span class="chip blue">figma</span><span class="chip blue">gherkin</span></div>
+          </div>
+        </article>
+        <article class="stage">
+          <span class="n">2</span>
+          <div>
+            <b>Demo web, publicada al instante</b>
+            <p>Una web de prueba en Next.js, en Vercel. Se mira en celular, tablet y computadora, y ahí se afina el pedido. Todavía no hace falta resolver el acceso, el guardado ni la velocidad.</p>
+            <div class="chips"><span class="chip">sin revisión de código</span><span class="chip">se publica fácil</span><span class="chip">se pule el requerimiento</span></div>
+          </div>
+        </article>
+        <article class="stage">
+          <span class="n">3</span>
+          <div>
+            <b>La web de verdad</b>
+            <p>Ahí se cierran el acuerdo con el servidor y el modelo de datos. Este código se revisa antes de unirlo.</p>
+            <div class="chips"><span class="chip blue">contratos</span><span class="chip blue">modelo de datos</span><span class="chip">se revisa antes de unir</span></div>
+          </div>
+        </article>
+        <article class="stage">
+          <span class="n">4</span>
+          <div>
+            <b>Las apps finales</b>
+            <p>Siguiendo el mapa de arquitectura: el código de las cuatro pantallas y las pruebas de punta a punta.</p>
+            <div class="chips"><span class="chip blue">android</span><span class="chip blue">iphone</span><span class="chip blue">web</span><span class="chip blue">computadora</span><span class="chip">pruebas e2e</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">El tablero</p>
+      <h2>Del pedido a las apps.</h2>
+      <img class="flowshot" src="images/flujo-producto-a-apps.jpg" alt="Flujo desde identificar el problema, pasar por la demo y la lógica de negocio, hasta escribir las apps en todos los targets.">
+    </section>
+
+  </main>
+  <nav class="bar">
+    <button type="button" id="prev">Anterior</button>
+    <button type="button" id="next">Siguiente</button>
+    <span id="count"></span>
+  </nav>
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    let index = 0;
+    const count = document.getElementById("count");
+    function show(next) {
+      index = Math.max(0, Math.min(slides.length - 1, next));
+      slides.forEach((slide, i) => slide.classList.toggle("active", i === index));
+      count.textContent = (index + 1) + " / " + slides.length;
+    }
+    document.getElementById("prev").addEventListener("click", () => show(index - 1));
+    document.getElementById("next").addEventListener("click", () => show(index + 1));
+    document.addEventListener("keydown", (event) => {
+      if (["ArrowRight", " ", "PageDown"].includes(event.key)) {
+        event.preventDefault();
+        show(index + 1);
+      } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        event.preventDefault();
+        show(index - 1);
+      } else if (event.key === "Home") show(0);
+      else if (event.key === "End") show(slides.length - 1);
+    });
+    show(0);
+  </script>
+</body>
+</html>

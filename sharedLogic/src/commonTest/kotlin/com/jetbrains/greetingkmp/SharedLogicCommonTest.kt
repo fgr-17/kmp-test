@@ -1,12 +1,11 @@
 package com.jetbrains.greetingkmp
 
 import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SharedLogicCommonTest {
-
     @Test
-    fun example() {
-        assertEquals(3, 1 + 2)
+    fun sayHello_includesName() {
+        assertTrue(sayHello("KMP").contains("KMP"))
     }
 }

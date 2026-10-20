@@ -8,12 +8,13 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.kmpNativeCoroutines)
     alias(libs.plugins.sqldelight)
+    jacoco
 }
 
 kotlin {
     listOf(
         iosArm64(),
-        iosSimulatorArm64()
+        iosSimulatorArm64(),
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "SharedLogic"
@@ -29,8 +30,14 @@ kotlin {
 
     android {
         namespace = "com.jetbrains.greetingkmp.sharedLogic"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
-        minSdk = libs.versions.android.minSdk.get().toInt()
+        compileSdk =
+            libs.versions.android.compileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
 
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
@@ -69,10 +76,14 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.ktor.client.mock)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.coroutines.test)
         }
         androidMain.dependencies {
-            // Provides the Android engine for Ktor
-            implementation(libs.ktor.client.android)
+            // OkHttp, not the HttpURLConnection engine: on API 37 the URLConnection
+            // client opens an IPv6 socket to 10.0.2.2 and the SYN never completes.
+            implementation(libs.ktor.client.okhttp)
             implementation(libs.sqldelight.android.driver)
         }
         iosMain.dependencies {
@@ -90,4 +101,32 @@ kotlin {
             implementation(libs.sqldelight.sqlite.driver)
         }
     }
+}
+
+// JaCoCo on the JVM target only — Kover conflicts with AGP's KMP Android library plugin.
+tasks.named<Test>("jvmTest") {
+    finalizedBy("jacocoJvmTestReport")
+}
+
+tasks.register<JacocoReport>("jacocoJvmTestReport") {
+    group = "verification"
+    description = "HTML/XML coverage for sharedLogic jvmTest (commonTest on JVM)."
+    dependsOn("jvmTest")
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("classes/kotlin/jvm/main")) {
+            exclude("**/Platform*.class")
+        },
+    )
+    sourceDirectories.setFrom(
+        files(
+            "src/commonMain/kotlin",
+            "src/jvmMain/kotlin",
+        ),
+    )
+    executionData.setFrom(layout.buildDirectory.file("jacoco/jvmTest.exec"))
 }

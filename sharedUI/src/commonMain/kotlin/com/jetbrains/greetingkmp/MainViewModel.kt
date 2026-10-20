@@ -37,11 +37,12 @@ class MainViewModel : ViewModel() {
     fun setOnline(online: Boolean) {
         notesFacade.isOnline = online
         _isOnline.value = online
-        _status.value = if (online) {
-            "Online — Sync will reach the Go backend."
-        } else {
-            "Offline — notes stay on device."
-        }
+        _status.value =
+            if (online) {
+                "Online — Sync will reach the Go backend."
+            } else {
+                "Offline — notes stay on device."
+            }
     }
 
     fun addNote(text: String) {
@@ -51,13 +52,15 @@ class MainViewModel : ViewModel() {
     }
 
     fun sync() {
+        _status.value = "Syncing..."
         viewModelScope.launch {
-            _status.value = when (val result = notesFacade.sync()) {
-                SyncResult.Offline -> "Still offline — turn Online on first."
-                SyncResult.NothingToSync -> "Nothing pending."
-                is SyncResult.Synced -> "Synced ${result.count} note(s) to cloud."
-                is SyncResult.Failed -> "Sync failed: ${result.message}"
-            }
+            _status.value =
+                when (val result = notesFacade.sync()) {
+                    SyncResult.Offline -> "Still offline — turn Online on first."
+                    SyncResult.NothingToSync -> "Nothing pending."
+                    is SyncResult.Synced -> "Synced ${result.count} note(s) to cloud."
+                    is SyncResult.Failed -> "Sync failed: ${result.message}"
+                }
         }
     }
 }

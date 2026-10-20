@@ -1,0 +1,65 @@
+build:
+  maxIssues: 0
+
+complexity:
+  active: true
+  ComplexCondition:
+    active: true
+    threshold: 4
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 15
+  LongMethod:
+    active: true
+    threshold: 80
+    ignoreAnnotated: ['Composable']
+
+  LongParameterList:
+    active: true
+    functionThreshold: 6
+  NestedBlockDepth:
+    active: true
+    threshold: 4
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 20
+
+style:
+  active: true
+  MagicNumber:
+    active: false
+  WildcardImport:
+    active: true
+  ReturnCount:
+    active: true
+    max: 3
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+  # Newlines / imports owned by ktlint
+  NewLineAtEndOfFile:
+    active: false
+
+naming:
+  active: true
+  FunctionNaming:
+    active: true
+    functionPattern: '[a-z][a-zA-Z0-9_]*'
+    ignoreAnnotated: ['Composable', 'Preview']
+  MatchingDeclarationName:
+    active: false
+
+performance:
+  active: true
+
+potential-bugs:
+  active: true
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: true
+    allowedExceptionNameRegex: '_|(ignore|expected|e|ex|exception|error|t|throwable).*'
+
+empty-blocks:
+  active: true

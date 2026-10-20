@@ -29,6 +29,11 @@ class NotesFacade(
             syncService.isOnline = value
         }
 
+    fun clear() {
+        store.clear()
+        isOnline = false
+    }
+
     @OptIn(ExperimentalTime::class)
     fun addNote(text: String): FieldNote {
         val createdAt = Clock.System.now().toString()
@@ -43,8 +48,13 @@ class NotesFacade(
 object CloudConfig {
     const val DESKTOP_BASE_URL = "http://localhost:8081"
     const val WEB_BASE_URL = "http://localhost:8081"
+
     /** iOS Simulator can reach the Mac host via localhost. */
     const val IOS_SIMULATOR_BASE_URL = "http://localhost:8081"
-    /** Android emulator loopback to the host machine. */
-    const val ANDROID_EMULATOR_BASE_URL = "http://10.0.2.2:8081"
+
+    /**
+     * Emulator loopback. `adb reverse tcp:8081 tcp:8081` forwards this to the
+     * host Go server. 10.0.2.2 stays in SYN_SENT for app traffic on API 37.
+     */
+    const val ANDROID_EMULATOR_BASE_URL = "http://127.0.0.1:8081"
 }

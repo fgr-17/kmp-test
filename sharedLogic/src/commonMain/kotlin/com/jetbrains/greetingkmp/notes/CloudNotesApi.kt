@@ -2,6 +2,7 @@ package com.jetbrains.greetingkmp.notes
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -18,25 +19,29 @@ class CloudNotesApi(
 ) {
     suspend fun pushBatch(notes: List<FieldNote>): List<String> {
         if (notes.isEmpty()) return emptyList()
-        val response: BatchResponse = httpClient.post("$baseUrl/notes/batch") {
-            contentType(ContentType.Application.Json)
-            setBody(BatchRequest(notes = notes.map { it.toDto() }))
-        }.body()
+        val response: BatchResponse =
+            httpClient
+                .post("$baseUrl/notes/batch") {
+                    contentType(ContentType.Application.Json)
+                    setBody(BatchRequest(notes = notes.map { it.toDto() }))
+                }.body()
         return response.acceptedIds
     }
 
-    suspend fun fetchAll(): List<NoteDto> =
-        httpClient.get("$baseUrl/notes").body()
+    suspend fun fetchAll(): List<NoteDto> = httpClient.get("$baseUrl/notes").body()
 
     companion object {
-        fun defaultClient(): HttpClient = HttpClient {
-            install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    isLenient = true
-                })
+        fun defaultClient(): HttpClient =
+            HttpClient(notesEngine()) {
+                install(ContentNegotiation) {
+                    json(
+                        Json {
+                            ignoreUnknownKeys = true
+                            isLenient = true
+                        },
+                    )
+                }
             }
-        }
     }
 }
 
@@ -48,9 +53,15 @@ data class NoteDto(
 )
 
 @Serializable
-private data class BatchRequest(val notes: List<NoteDto>)
+private data class BatchRequest(
+    val notes: List<NoteDto>,
+)
 
 @Serializable
-private data class BatchResponse(val acceptedIds: List<String>)
+private data class BatchResponse(
+    val acceptedIds: List<String>,
+)
 
 private fun FieldNote.toDto() = NoteDto(id = id, text = text, createdAt = createdAt)
+
+internal expect fun notesEngine(): HttpClientEngine

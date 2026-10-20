@@ -1,0 +1,111 @@
+openapi: 3.0.3
+info:
+  title: GreetingKMP Notes Cloud API
+  version: 1.0.0
+  description: System of record for the offline field-notes demo (`backend/`).
+servers:
+  - url: http://localhost:8081
+paths:
+  /health:
+    get:
+      summary: Liveness
+      operationId: getHealth
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, time]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  time:
+                    type: string
+                    format: date-time
+  /notes:
+    get:
+      summary: List all notes in the cloud
+      operationId: listNotes
+      responses:
+        "200":
+          description: Notes currently stored
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Note"
+    delete:
+      summary: Remove every note so a test run starts empty
+      operationId: clearNotes
+      responses:
+        "204":
+          description: Store is empty
+  /notes/batch:
+    post:
+      summary: Upsert a batch of notes from a device
+      operationId: upsertNotesBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchRequest"
+            examples:
+              twinBarrel:
+                $ref: "#/components/examples/BatchRequestTwinBarrel"
+      responses:
+        "200":
+          description: Accepted note ids
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchResponse"
+              examples:
+                twinBarrel:
+                  $ref: "#/components/examples/BatchResponseTwinBarrel"
+        "400":
+          description: Invalid JSON body
+components:
+  schemas:
+    Note:
+      type: object
+      required: [id, text, createdAt]
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        createdAt:
+          type: string
+    BatchRequest:
+      type: object
+      required: [notes]
+      properties:
+        notes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Note"
+    BatchResponse:
+      type: object
+      required: [acceptedIds]
+      properties:
+        acceptedIds:
+          type: array
+          items:
+            type: string
+  examples:
+    BatchRequestTwinBarrel:
+      summary: Golden fixture matching contracts/fixtures/batch_request.json
+      value:
+        notes:
+          - id: "note-1"
+            text: "Checked barrel B12"
+            createdAt: "2026-01-01T00:00:00Z"
+    BatchResponseTwinBarrel:
+      summary: Golden fixture matching contracts/fixtures/batch_response.json
+      value:
+        acceptedIds: ["note-1"]
